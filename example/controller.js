@@ -294,4 +294,31 @@ app.controller('Ctrl', function($scope) {
         "done": false,
         "created_at": "2012-01-03"}
     ];
+
+    $scope.othertodos = [
+        {
+        "name": "inicio",
+        "estimate": 4,
+        "done": false,
+        "created_at": "2012-01-03",
+        "update_at": ""},
+    {
+        "name": "asdfasfd",
+        "estimate": 4,
+        "done": false,
+        "created_at": "2012-01-03",
+        "update_at": ""},
+    {
+        "name": "vbbv ghjghj",
+        "estimate": 4,
+        "done": false,
+        "created_at": "2012-01-03",
+        "update_at": ""},
+    {
+        "name": "ghfg",
+        "estimate": 4,
+        "done": false,
+        "created_at": "2012-01-03",
+        "update_at": ""}
+    ];
 });

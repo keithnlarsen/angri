@@ -14,38 +14,43 @@
  *  limitations under the License.
  */
 
- (function (angular) {
-     'use strict';
-
+(function (angular) {
+    'use strict';
      var angriModule = angular.module('angri', []);
-     var filters = {
-         FILTER_GT: { sign: '>', code: 'gt', fn: function (item, filter) {
-             return parseInt(item, 10) > parseInt(filter, 10);
-         }
+     var FILTERS = {
+         FILTER_GT: {
+             sign: '>', code: 'gt', fn: function (item, filter) {
+                 return parseInt(item, 10) > parseInt(filter, 10);
+             }
          },
-         FILTER_LT: { sign: '<', code: 'lt', fn: function (item, filter) {
-             return parseInt(item, 10) < parseInt(filter, 10);
-         }
+         FILTER_LT: {
+             sign: '<', code: 'lt', fn: function (item, filter) {
+                 return parseInt(item, 10) < parseInt(filter, 10);
+             }
          },
-         FILTER_IN: { sign: ':', code: 'in', fn: function (item, filter) {
-             return typeof item === 'string' ? item.indexOf(filter) !== -1 : filter == item;
-         }
+         FILTER_IN: {
+             sign: ':', code: 'in', fn: function (item, filter) {
+                 return typeof item === 'string' ? item.indexOf(filter) !== -1 : filter == item;
+             }
          },
-         FILTER_NIN: { sign: '!', code: 'nin', fn: function (item, filter) {
-             return typeof item === 'string' ? item.indexOf(filter) === -1 : filter != item;
-         }
+         FILTER_NIN: {
+             sign: '!', code: 'nin', fn: function (item, filter) {
+                 return typeof item === 'string' ? item.indexOf(filter) === -1 : filter != item;
+             }
          },
-         FILTER_EQ: { sign: '=', code: 'eq', fn: function (item, filter) {
-             return filter == item;
-         }
+         FILTER_EQ: {
+             sign: '=', code: 'eq', fn: function (item, filter) {
+                 return filter == item;
+             }
          },
-         FILTER_NEQ: { sign: '~', code: 'neq', fn: function (item, filter) {
-             return filter != item;
-         }
+         FILTER_NEQ: {
+             sign: '~', code: 'neq', fn: function (item, filter) {
+                 return filter != item;
+             }
          }
      };
-     var FILTER_REGEX = new RegExp("^\\s*([a-zA-Z]+)\\s*([" + Object.keys(filters).map(function (filter) { return "\\" + filters[filter].sign; }).join('') + "])\\s*(.+)$");
-     var FILTER_ANY = filters.FILTER_IN;
+     var FILTER_REGEX = new RegExp("^\\s*([a-zA-Z]+)\\s*([" + Object.keys(FILTERS).map(function (filter) { return "\\" + FILTERS[filter].sign; }).join('') + "])\\s*(.+)$");
+     var FILTER_ANY = FILTERS.FILTER_IN;
 
      // the skip filter
      angriModule.filter('angri_filter_skip', function () {
@@ -93,15 +98,15 @@
                  return results;
              }
 
-             var edge = (count - count % 2) / 2,
-                 low = true,
-                 low_from = 1,
-                 low_to = edge,
-                 mid_from = Math.max(1, page - edge),
-                 mid_to = Math.min(length, page + edge),
-                 high = true,
-                 high_from = length - edge + 1,
-                 high_to = length + 1;
+             var edge = (count - count % 2) / 2;
+             var low = true;
+             var low_from = 1;
+             var low_to = edge;
+             var mid_from = Math.max(1, page - edge);
+             var mid_to = Math.min(length, page + edge);
+             var high = true;
+             var high_from = length - edge + 1;
+             var high_to = length + 1;
 
              if (mid_from - low_to <= 2) {
                  low = false;
@@ -149,10 +154,10 @@
                  if (!(row in item)) return false;
                  var element = item[row];
                  // run through all Filters
-                 return Object.keys(filters).filter(function (filter) {
-                     return filters[filter].code == code;
+                 return Object.keys(FILTERS).filter(function (filter) {
+                     return FILTERS[filter].code == code;
                  }).reduce(function (value, filter) {
-                     return value && filters[filter].fn(element, needle);
+                     return value && FILTERS[filter].fn(element, needle);
                  }, true);
              });
          };
@@ -172,56 +177,66 @@
      });
 
      // the main directive: ngGrid
-     angriModule.directive('angrid', function ($compile) {
+     angriModule.directive('angrid', function () {
          var templates = {
-             header: '<thead>' +
-                    '<th ng-repeat="head in angri.header">' +
-                        '<div ng-switch on="!head.name" >' +
-                            '<div ng-switch-when="true">{{head.title}}</div>' +
-                            '<div ng-switch-when="false">' +
-                                '<a class="btn btn-link" ng-class="{disabled: !head.name}" ng-click="sort(head.index)">' +
-                                '{{head.title}} ' +
-                                '<i ng-class="{ \'icon-arrow-up\'  : !!head.name && (angri.predicate==head.name) && angri.reverse' +
-                                ',\'icon-arrow-down\': head.name && (angri.predicate==head.name) && !angri.reverse}" ></i>' +
-                                '</a>' +
-                            '</div>' +
-                        '</div>' +
-                    '</th>' +
-                '</thead>',
-             controls: '<div class="row">' +
-                        '<div class="span4">' +
-                            '<select ng-options="option for option in angri.limits" ng-model="angri.limit"></select>' +
-                        '</div>' +
-                        '<div class="control-group span8" ng-class="{error: angri.filterError}">' +
-                            '<div class="pull-right">' +
-                                '<input type="text" class="input-medium" ng-model="angri.filter" placeholder="{{i18n.filter}}" name="filter" />' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>',
-             footer: '<div style="float: left;" class="pageNum">' +
-                        '<strong>{{i18n.total}}{{angri.filteredList(true).length}} of {{angri.unfilteredList(true).length}}</strong>' +
-                    '</div>' +
-                    '<div class="pagination pagination-right">' +
-                        '<ul>' +
-                            '<li ng-class="{disabled: angri.page == 1}">' +
-                                '<a ng-click="prev()">{{i18n.prev}}</a>' +
-                            '</li>' +
-                            '<li ng-repeat="pageIndex in angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_toPages:angri.maxPages:angri.page" ng-class="{active: angri.page==pageIndex, disabled: pageIndex==\'\u2026\'}">' +
-                                '<a ng-click="page(pageIndex)">{{pageIndex}}</a></li>' +
-                            '</li>' +
-                            '<li ng-class="angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_equal:angri.page:\'disabled\'">' +
-                                '<a ng-click="next()">{{i18n.next}}</a>' +
-                            '</li>' +
-                        '</ul>' +
-                    '</div>',
-             debug: '<pre>pagination = {{angri | json}}</pre>'
+             header:
+             '<thead>' +
+                 '<tr>' +
+                     '<th colspan="{{angri.header.length}}">' +
+                         '<div class="pull-left">' +
+                             '<select ng-options="option for option in angri.limits" ng-model="angri.limit"></select>' +
+                         '</div>' +
+                         '<div class="pull-right">' +
+                             '<input type="text" class="input-medium" ng-model="angri.filter" placeholder="{{i18n.filter}}" name="filter" />' +
+                         '</div>' +
+                     '</th>' +
+                 '</tr>' +
+                 '<tr>' +
+                     '<th ng-repeat="head in angri.header">' +
+                         '<div ng-switch on="!head.name" >' +
+                             '<div ng-switch-when="true">{{head.title}}</div>' +
+                             '<div ng-switch-when="false">' +
+                                 '<a class="btn btn-link" ng-class="{disabled: !head.name}" ng-click="sort(head.index)">' +
+                                 '{{head.title}} ' +
+                                 '<i ng-class="{ \'icon-arrow-up\'  : !!head.name && (angri.predicate==head.name) && angri.reverse' +
+                                 ',\'icon-arrow-down\': head.name && (angri.predicate==head.name) && !angri.reverse}" ></i>' +
+                                 '</a>' +
+                             '</div>' +
+                         '</div>' +
+                     '</th>' +
+                 '</tr>' +
+             '</thead>',
+             footer:
+                 '<tfoot>' +
+                     '<tr>' +
+                         '<td colspan="{{angri.header.length}}">' +
+                             '<div class="pull-left pageNum">' +
+                                 '<strong>{{i18n.total}}{{angri.filteredList(true).length}} of {{angri.unfilteredList(true).length}}</strong>' +
+                             '</div>' +
+                             '<div class="pull-right pagination pagination-right">' +
+                                 '<ul>' +
+                                     '<li ng-class="{disabled: angri.page == 1}">' +
+                                         '<a ng-click="prev()">{{i18n.prev}}</a>' +
+                                     '</li>' +
+                                     '<li ng-repeat="pageIndex in angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_toPages:angri.maxPages:angri.page" ng-class="{active: angri.page==pageIndex, disabled: pageIndex==\'\u2026\'}">' +
+                                         '<a ng-click="page(pageIndex)">{{pageIndex}}</a></li>' +
+                                     '</li>' +
+                                     '<li ng-class="angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_equal:angri.page:\'disabled\'">' +
+                                         '<a ng-click="next()">{{i18n.next}}</a>' +
+                                     '</li>' +
+                                 '</ul>' +
+                             '</div>' +
+                         '</td>' +
+                     '</tr>' +
+                 '</tfoot>'
          };
          return {
+             scope: { localCollection: '=ngCollection' },
              compile: function (tElement, tAttrs, transclude) {
                  var index = 0;
                  var tr = tElement.children('tbody').children('tr');
                  var sourceExpression = tr.attr('ng-repeat').match(/^\s*(.+)\s+in\s+(.*)\s*$/);
-                 var baseExpression = sourceExpression[2];
+                 var baseExpression = ' localCollection';
                  var itemExpression = sourceExpression[1];
 
                  tr.attr('ng-repeat', itemExpression + ' in angri.filteredList() | angri_filter_skip:angri.page:angri.limit | orderBy:angri.predicate:angri.reverse | limitTo:angri.limit | angri_filter_forceLimit');
@@ -251,118 +266,109 @@
                      column.attr('angri-title', null);
                      index++;
                  });
+
                  tElement.prepend(templates.header);
+                 tElement.append(templates.footer);
 
-                 return {
-                     post: function (scope) {
-                         scope.page(1);
-                     },
-                     pre: function (scope) {
-                         var cache = null;
-                         var lastExpression = null;
+                 return function (scope, element, attrs) {
+                     var cache = null;
+                     var lastExpression = null;
 
-                         scope.angri = {
-                             expression: baseExpression,
-                             debug: tElement.attr('angri-debug') !== undefined,   // kind of a debugging mode :-D
-                             forceLimit: tElement.attr('angri-forceLimit') !== undefined || tElement.attr('force-limit') !== undefined,   // force the size of the pages
-                             limit: tElement.attr('angri-limit') || 10,      // max number of items on page
-                             limits: [10, 20, 30, 60],
-                             page: tElement.attr('angri-page') || 1,       // current page of the list
-                             maxPages: tElement.attr('angri-pagination') || 5,       // max pages to show in pagination, half.floor() on edges
-                             filterError: false,  // computed value, tells if filter is in an error state
-                             filter: '',     // filter to be used with this grid
-                             header: header, // header that was found for the grid
-                             filteredList: function (ignoreCache) {
-                                 if (!ignoreCache && scope.angri.expression == lastExpression)
-                                     return cache;
-                                 lastExpression = scope.angri.expression;
-                                 cache = scope.$eval(scope.angri.expression);
+                     scope.angri = {
+                         expression: baseExpression,
+                         debug: tElement.attr('angri-debug') !== undefined,   // kind of a debugging mode :-D
+                         forceLimit: tElement.attr('angri-forceLimit') !== undefined || tElement.attr('force-limit') !== undefined,   // force the size of the pages
+                         limit: tElement.attr('angri-limit') || 10,      // max number of items on page
+                         limits: [10, 20, 30, 60],
+                         page: tElement.attr('angri-page') || 1,       // current page of the list
+                         maxPages: tElement.attr('angri-pagination') || 5,       // max pages to show in pagination, half.floor() on edges
+                         filterError: false,  // computed value, tells if filter is in an error state
+                         filter: '',     // filter to be used with this grid
+                         header: header, // header that was found for the grid
+                         filteredList: function (ignoreCache) {
+                             if (!ignoreCache && scope.angri.expression == lastExpression)
                                  return cache;
-                             },
-                             unfilteredList: function (ignoreCache) {
-                                 return scope.$eval(baseExpression);
-                             }
-                         };
-
-                         scope.i18n = {
-                             next: 'Next',
-                             prev: 'Prev',
-                             total: 'Total: ',
-                             filter: 'Field:Item or Item'
-                         };
-
-                         if (scope.angri.debug) {
-                             tElement.after($compile(templates.debug)(scope));
+                             lastExpression = scope.angri.expression;
+                             cache = scope.$eval(scope.angri.expression);
+                             return cache;
+                         },
+                         unfilteredList: function (ignoreCache) {
+                             return scope.$eval(baseExpression);
                          }
-                         tElement.before($compile(templates.controls)(scope));
-                         tElement.after($compile(templates.footer)(scope));
+                     };
 
-                         scope.$watch('angri.limit', function () {
-                             var lastPage = Math.ceil(scope.angri.filteredList().length / scope.angri.limit);
-                             if (scope.angri.page > lastPage)
-                                 scope.angri.page = lastPage;
-                         });
+                     scope.i18n = {
+                         next: 'Next',
+                         prev: 'Prev',
+                         total: 'Total: ',
+                         filter: 'Field:Item or Item'
+                     };
 
-                         scope.$watch('angri.filter', function () {
-                             var filterExpression = '';
-                             scope.angri.filterError = false;
-                             if (scope.angri.filter) {
-                                 var match = angular.lowercase(scope.angri.filter).match(FILTER_REGEX);
-                                 if (match) {
-                                     var head = null;
-                                     var row = match[1].trim().replace(' ', '_');
-                                     var func = match[2].trim();
-                                     var filter = match[3].trim();
-                                     var filters = Object.keys(filters).map(function (filter) {
-                                         return filters[filter].sign == func ? filters[filter].code : false;
-                                     }).filter(function (func) {
-                                         return func;
-                                     });
-                                     
-                                     if (filter.length && row in filter_hash) {
-                                         head = scope.angri.header[filter_hash[row]];
-                                     }
-                                     if (filters.length && filter && head) { // we do have a filter, a lookup target and a function to filter by
-                                         filterExpression = ' | angri_filter_rowFilter:\'' + head.name + '\':\'' + filters[0] + '\':\'' + filter + '\'';
-                                     } else {
-                                         scope.angri.filterError = true;
-                                         filterExpression = '';
-                                     }
-                                 } else {
-                                     filterExpression = ' | angri_filter_anyRowFilter:\'' + angular.lowercase(scope.angri.filter) + '\'';
+                     scope.$watch('angri.limit', function () {
+                         var lastPage = Math.ceil(scope.angri.filteredList().length / scope.angri.limit);
+                         if (scope.angri.page > lastPage)
+                             scope.angri.page = lastPage;
+                     });
+
+                     scope.$watch('angri.filter', function () {
+                         var filterExpression = '';
+                         scope.angri.filterError = false;
+                         if (scope.angri.filter) {
+                             var match = angular.lowercase(scope.angri.filter).match(FILTER_REGEX);
+                             if (match) {
+                                 var head = null;
+                                 var row = match[1].trim().replace(' ', '_');
+                                 var func = match[2].trim();
+                                 var filter = match[3].trim();
+                                 var filters = Object.keys(FILTERS).map(function (filter) {
+                                     return FILTERS[filter].sign == func ? FILTERS[filter].code : false;
+                                 }).filter(function (func) {
+                                     return func;
+                                 });
+
+                                 if (filter.length && row in filter_hash) {
+                                     head = scope.angri.header[filter_hash[row]];
                                  }
+                                 if (filters.length && filter && head) { // we do have a filter, a lookup target and a function to filter by
+                                     filterExpression = ' | angri_filter_rowFilter:\'' + head.name + '\':\'' + filters[0] + '\':\'' + filter + '\'';
+                                 } else {
+                                     scope.angri.filterError = true;
+                                     filterExpression = '';
+                                 }
+                             } else {
+                                 filterExpression = ' | angri_filter_anyRowFilter:\'' + angular.lowercase(scope.angri.filter) + '\'';
                              }
-                             scope.angri.expression = baseExpression + filterExpression;
-                         });
+                         }
+                         scope.angri.expression = baseExpression + filterExpression;
+                     });
 
-                         scope.sort = function (columnIndex) {
-                             var head = header[columnIndex];
-                             if (!head || !head.name) return;
-                             // if the grid is already sorted by this head and not in reverse mode:
-                             scope.angri.reverse = (scope.angri.predicate === head.name) && !scope.angri.reverse;
-                             // set sorting to this head
-                             scope.angri.predicate = head.name;
-                         };
+                     scope.sort = function (columnIndex) {
+                         var head = header[columnIndex];
+                         if (!head || !head.name) return;
+                         // if the grid is already sorted by this head and not in reverse mode:
+                         scope.angri.reverse = (scope.angri.predicate === head.name) && !scope.angri.reverse;
+                         // set sorting to this head
+                         scope.angri.predicate = head.name;
+                     };
 
-                         scope.prev = function () {
-                             if (scope.angri.page > 1) {
-                                 scope.page(scope.angri.page - 1);
-                             }
-                         };
+                     scope.prev = function () {
+                         if (scope.angri.page > 1) {
+                             scope.page(scope.angri.page - 1);
+                         }
+                     };
 
-                         scope.next = function () {
-                             if (scope.angri.page < Math.ceil(scope.angri.filteredList().length / scope.angri.limit)) {
-                                 scope.page(scope.angri.page + 1);
-                             }
-                         };
+                     scope.next = function () {
+                         if (scope.angri.page < Math.ceil(scope.angri.filteredList().length / scope.angri.limit)) {
+                             scope.page(scope.angri.page + 1);
+                         }
+                     };
 
-                         scope.page = function (pageNumber) {
-                             if (typeof pageNumber === 'number')
-                                 scope.angri.page = pageNumber;
-                         };
-                     }
-                 };
+                     scope.page = function (pageNumber) {
+                         if (typeof pageNumber === 'number')
+                             scope.angri.page = pageNumber;
+                     };
+                 }
              }
          };
-     });
- })(window.angular);
+    });
+})(window.angular);
