@@ -180,7 +180,7 @@
      angriModule.directive('angrid', function () {
          var templates = {
              header:
-             '<thead>' +
+             '<thead style="background-color: whiteSmoke">' +
                  '<tr>' +
                      '<th colspan="{{angri.header.length}}">' +
                          '<div class="pull-left">' +
@@ -194,7 +194,7 @@
                  '<tr>' +
                      '<th ng-repeat="head in angri.header">' +
                          '<div ng-switch on="!head.name" >' +
-                             '<div ng-switch-when="true">{{head.title}}</div>' +
+                             '<div ng-switch-when="true"><div style="vertical-align: middle;display: inline-block;padding: 4px 14px;" >{{head.title}}</div></div>' +
                              '<div ng-switch-when="false">' +
                                  '<a class="btn btn-link" ng-class="{disabled: !head.name}" ng-click="sort(head.index)">' +
                                  '{{head.title}} ' +
@@ -207,24 +207,28 @@
                  '</tr>' +
              '</thead>',
              footer:
-                 '<tfoot>' +
+                 '<tfoot style="background-color: whiteSmoke">' +
                      '<tr>' +
                          '<td colspan="{{angri.header.length}}">' +
-                             '<div class="pull-left pageNum">' +
-                                 '<strong>{{i18n.total}}{{angri.filteredList(true).length}} of {{angri.unfilteredList(true).length}}</strong>' +
+                             '<div class="pull-left">' +
+                                 '<div class="pageNum">' +
+                                     '<strong>{{i18n.total}}{{angri.filteredList(true).length}} of {{angri.unfilteredList(true).length}}</strong>' +
+                                 '</div>' +
                              '</div>' +
-                             '<div class="pull-right pagination pagination-right">' +
-                                 '<ul>' +
-                                     '<li ng-class="{disabled: angri.page == 1}">' +
-                                         '<a ng-click="prev()">{{i18n.prev}}</a>' +
-                                     '</li>' +
-                                     '<li ng-repeat="pageIndex in angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_toPages:angri.maxPages:angri.page" ng-class="{active: angri.page==pageIndex, disabled: pageIndex==\'\u2026\'}">' +
-                                         '<a ng-click="page(pageIndex)">{{pageIndex}}</a></li>' +
-                                     '</li>' +
-                                     '<li ng-class="angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_equal:angri.page:\'disabled\'">' +
-                                         '<a ng-click="next()">{{i18n.next}}</a>' +
-                                     '</li>' +
-                                 '</ul>' +
+                             '<div class="pull-right" style="margin-top: 0;margin-bottom: 0">' +
+                                 '<div class="pagination pagination-right" style="margin-top: 0;margin-bottom: 0">' +
+                                     '<ul>' +
+                                         '<li ng-class="{disabled: angri.page == 1}">' +
+                                             '<a ng-click="prev()">{{i18n.prev}}</a>' +
+                                         '</li>' +
+                                         '<li ng-repeat="pageIndex in angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_toPages:angri.maxPages:angri.page" ng-class="{active: angri.page==pageIndex, disabled: pageIndex==\'\u2026\'}">' +
+                                             '<a ng-click="page(pageIndex)">{{pageIndex}}</a></li>' +
+                                         '</li>' +
+                                         '<li ng-class="angri.filteredList() | angri_filter_lastPage:angri.limit | angri_filter_equal:angri.page:\'disabled\'">' +
+                                             '<a ng-click="next()">{{i18n.next}}</a>' +
+                                         '</li>' +
+                                     '</ul>' +
+                                 '</div>' +
                              '</div>' +
                          '</td>' +
                      '</tr>' +
@@ -276,7 +280,6 @@
 
                      scope.angri = {
                          expression: baseExpression,
-                         debug: tElement.attr('angri-debug') !== undefined,   // kind of a debugging mode :-D
                          forceLimit: tElement.attr('angri-forceLimit') !== undefined || tElement.attr('force-limit') !== undefined,   // force the size of the pages
                          limit: tElement.attr('angri-limit') || 10,      // max number of items on page
                          limits: [10, 20, 30, 60],
